@@ -70,12 +70,7 @@ export function PaginatedActivityTokenList({ selectedToken }: { selectedToken: s
                 const creatorShort = token.creator ? token.creator.slice(-6) : ""
                 const website = token.metadata?.website
                 const description = token.metadata?.description || ""
-                let progress = token.progress || 0;
-                if (progress > 1) {
-                  progress = Math.round(progress);
-                } else {
-                  progress = Math.round(progress * 100);
-                }
+                const progress = Math.round(token.progress || 0)
                 const priceChange = token.timeframes?.["24h"]?.priceChange
                 const priceChangeNum = Number(priceChange)
                 const priceChangeColor = priceChangeNum > 0 ? "text-green-400" : priceChangeNum < 0 ? "text-red-400" : "text-green-400"
@@ -174,7 +169,7 @@ export function PaginatedActivityTokenList({ selectedToken }: { selectedToken: s
                       </div>
                       <div className="flex flex-col items-center">
                         <span className="text-xs text-muted-foreground">Vol</span>
-                        <span className="text-lg font-bold text-foreground">${formatNumber(Number(token.liquidity?.usd || 0))}</span>
+                        <span className="text-lg font-bold text-foreground">{formatNumber(Number(token.timeframes?.["24h"]?.volume || 0) * 1000000)}</span>
                       </div>
                       <div className="flex flex-col items-center">
                         <span className="text-xs text-muted-foreground">Chg</span>

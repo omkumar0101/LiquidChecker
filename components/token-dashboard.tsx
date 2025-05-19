@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer } from "recharts"
-import { PaginatedTokenList } from "@/components/PaginatedTokenList"
+import { PaginatedActivityTokenList } from "@/components/PaginatedActivityTokenList"
 
 // Mock data for token
 const mockToken = {
@@ -229,7 +229,7 @@ export function TokenDashboard() {
           </div>
         </CardContent>
       </Card>
-      <PaginatedTokenList />
+      <PaginatedActivityTokenList selectedToken="" />
     </div>
   )
 }

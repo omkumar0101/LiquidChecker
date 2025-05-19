@@ -5,20 +5,10 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Home, LineChart, Menu, Search, Star, X, Info, LogOut } from "lucide-react"
+import { BarChart3, Home, LineChart, Menu, Search, Star, X, Info, LogOut, Zap, PieChart, Clock, Droplet, TrendingUp, Repeat, Users, Twitter, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
+import { Input } from "@/components/ui/input"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -31,11 +21,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       icon: Home,
     },
     {
-      name: "Dashboard",
-      path: "/dashboard",
-      icon: LineChart,
-    },
-    {
       name: "Watchlist",
       path: "/watchlist",
       icon: Star,
@@ -45,111 +30,115 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       path: "/compare",
       icon: BarChart3,
     },
-    {
-      name: "About",
-      path: "/about",
-      icon: Info,
+    { 
+      name: "Activity", 
+      path: "/activity", 
+      icon: Zap 
+    },
+    { 
+      name: "Market Cap", 
+      path: "/market-cap", 
+      icon: PieChart 
+    },
+    { 
+      name: "Age", 
+      path: "/age", 
+      icon: Clock 
+    },
+    { 
+      name: "Volume", 
+      path: "/volume", 
+      icon: Droplet 
+    },
+    { 
+      name: "Change", 
+      path: "/change", 
+      icon: TrendingUp 
+    },
+    { 
+      name: "Trades", 
+      path: "/trades", 
+      icon: Repeat 
+    },
+    { 
+      name: "Holders", 
+      path: "/holders", 
+      icon: Users 
     },
   ]
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen bg-background">
-        {/* Desktop Sidebar */}
-        <Sidebar className="hidden md:flex" collapsible="icon">
-          <SidebarHeader className="flex items-center px-4 py-2">
-            <div className="flex items-center space-x-2">
-              <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
-                <LineChart className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold whitespace-nowrap hidden md:inline group-data-[state=expanded]/sidebar-wrapper:inline group-data-[state=collapsed]/sidebar-wrapper:hidden">Hyper Dash</span>
-            </div>
-            <SidebarTrigger className="ml-auto" />
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-              {routes.map((route) => (
-                <SidebarMenuItem key={route.path}>
-                  <SidebarMenuButton asChild isActive={pathname === route.path}>
-                    <Link href={route.path} className="flex items-center gap-2">
-                      <route.icon className="h-5 w-5 shrink-0" />
-                      <span className="truncate">{route.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-            {/* Analytics group from image */}
-            <div className="mt-6">
-              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Analytics</div>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/activity"} className="flex items-center gap-2">
-                    <Link href="/analytics/activity"><span>⚡</span><span>Activity</span></Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/market-cap"} className="flex items-center gap-2">
-                    <Link href="/analytics/market-cap">Market Cap</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/age"} className="flex items-center gap-2">
-                    <Link href="/analytics/age">Age</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/volume"} className="flex items-center gap-2">
-                    <Link href="/analytics/volume">Volume</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/change"} className="flex items-center gap-2">
-                    <Link href="/analytics/change">Change</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/trades"} className="flex items-center gap-2">
-                    <Link href="/analytics/trades">Trades</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname === "/analytics/holders"} className="flex items-center gap-2">
-                    <Link href="/analytics/holders">Holders</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </div>
-          </SidebarContent>
-          <SidebarFooter className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <span className="text-sm font-medium">HD</span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">Guest User</p>
-                  <p className="text-xs text-muted-foreground truncate">Local Storage Only</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" className="shrink-0">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
+  const aboutRoute = { name: "About", path: "/about", icon: Info }
 
-        {/* Mobile Header */}
-        <div className="flex flex-col w-full">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:hidden">
+  return (
+    <div className="flex min-h-screen bg-background w-full">
+      {/* Sidebar */}
+      <aside className="hidden md:flex flex-col w-[240px] border-r bg-background fixed h-screen">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center space-x-2">
+            <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
+              <LineChart className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold">Hyper Dash</span>
+          </div>
+        </div>
+        <nav className="flex-1 py-4">
+          <ul className="grid gap-1 px-2">
+            {routes.map((route) => (
+              <li key={route.path}>
+                <Link
+                  href={route.path}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary ${
+                    pathname === route.path ? "bg-muted font-medium" : "text-muted-foreground"
+                  }`}
+                >
+                  <route.icon className="h-5 w-5 shrink-0" />
+                  {route.name}
+                </Link>
+              </li>
+            ))}
+            <li key={aboutRoute.path}>
+              <Link
+                href={aboutRoute.path}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary ${
+                  pathname === aboutRoute.path ? "bg-muted font-medium" : "text-muted-foreground"
+                }`}
+              >
+                <aboutRoute.icon className="h-5 w-5 shrink-0" />
+                {aboutRoute.name}
+              </Link>
+            </li>
+          </ul>
+        </nav>
+        <div className="border-t p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <span className="text-sm font-medium">HD</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">Guest User</p>
+                <p className="text-xs text-muted-foreground truncate">Local Storage Only</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col md:ml-[240px]">
+        {/* Header */}
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4">
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
+                <Button variant="outline" size="icon">
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[240px] p-0">
+                <SheetTitle className="sr-only">Main Navigation</SheetTitle>
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b">
                     <div className="flex items-center space-x-2">
@@ -158,11 +147,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       </div>
                       <span className="text-lg font-bold">Hyper Dash</span>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-                      <X className="h-5 w-5" />
-                    </Button>
                   </div>
-                  <nav className="flex-1 overflow-auto py-4">
+                  <nav className="flex-1 py-4">
                     <ul className="grid gap-1 px-2">
                       {routes.map((route) => (
                         <li key={route.path}>
@@ -178,6 +164,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                           </Link>
                         </li>
                       ))}
+                      <li key={aboutRoute.path}>
+                        <Link
+                          href={aboutRoute.path}
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary ${
+                            pathname === aboutRoute.path ? "bg-muted font-medium" : "text-muted-foreground"
+                          }`}
+                        >
+                          <aboutRoute.icon className="h-5 w-5 shrink-0" />
+                          {aboutRoute.name}
+                        </Link>
+                      </li>
                     </ul>
                   </nav>
                   <div className="border-t p-4">
@@ -196,19 +194,43 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </SheetContent>
             </Sheet>
-            <div className="flex items-center gap-2">
-              <LineChart className="h-6 w-6" />
-              <span className="font-bold text-lg">Hyper Dash</span>
+          </div>
+
+          {/* Beta Badge */}
+          <div className="flex-1 flex justify-center">
+            <div className="px-2 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+              Beta
             </div>
-            <div className="flex items-center ml-auto">
-              <Button variant="ghost" size="icon">
-                <Search className="h-5 w-5" />
+          </div>
+
+          {/* Search and Social Links */}
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-2 w-[200px]">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search tokens..."
+                className="h-8 w-full"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" asChild>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                  <Twitter className="h-5 w-5" />
+                  <span className="sr-only">Twitter</span>
+                </a>
+              </Button>
+              <Button variant="ghost" size="icon" asChild>
+                <a href="https://t.me" target="_blank" rel="noopener noreferrer">
+                  <Send className="h-5 w-5" />
+                  <span className="sr-only">Telegram</span>
+                </a>
               </Button>
             </div>
-          </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
-        </div>
+          </div>
+        </header>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
-    </SidebarProvider>
+    </div>
   )
 }
