@@ -13,8 +13,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "Hyper Dash - Cryptocurrency Dashboard",
-  description: "Track, analyze, and compare cryptocurrency tokens in real-time",
+  title: "Liquid Checker",
+  description: "Track, analyze, and compare cryptocurrency tokens in real-time with Liquid Checker",
     generator: 'v0.dev'
 }
 
@@ -33,6 +33,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
         />
+        <link rel="icon" href="/logo.webp" type="image/webp" />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>

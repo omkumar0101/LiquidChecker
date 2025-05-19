@@ -75,10 +75,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex flex-col w-[240px] border-r bg-background fixed h-screen">
         <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-2">
-              <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
-                <LineChart className="h-4 w-4 text-primary-foreground" />
+              <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center overflow-hidden">
+                <img src="/logo.webp" alt="Liquid Checker Logo" className="w-7 h-7 object-cover aspect-square rounded-full" />
               </div>
-            <span className="text-lg font-bold">Hyper Dash</span>
+            <span className="text-lg font-bold">Liquid Checker</span>
           </div>
             </div>
         <nav className="flex-1 py-4">
@@ -113,7 +113,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <span className="text-sm font-medium">HD</span>
+                  <span className="text-sm font-medium">LC</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">Guest User</p>
@@ -142,10 +142,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b">
                     <div className="flex items-center space-x-2">
-                      <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
-                        <LineChart className="h-4 w-4 text-primary-foreground" />
+                      <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center overflow-hidden">
+                        <img src="/logo.webp" alt="Liquid Checker Logo" className="w-7 h-7 object-cover aspect-square rounded-full" />
                       </div>
-                      <span className="text-lg font-bold">Hyper Dash</span>
+                      <span className="text-lg font-bold">Liquid Checker</span>
                     </div>
                   </div>
                   <nav className="flex-1 py-4">
@@ -182,7 +182,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <span className="text-sm font-medium">HD</span>
+                          <span className="text-sm font-medium">LC</span>
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">Guest User</p>
