@@ -21,6 +21,7 @@ interface Token {
       priceChange: string
     }
   }
+  address: string
 }
 
 interface ChartData {
@@ -28,6 +29,7 @@ interface ChartData {
   symbol: string
   value: number
   image: string
+  address: string
 }
 
 export default function ActivityPage() {
@@ -50,7 +52,8 @@ export default function ActivityPage() {
             name: token.name,
             symbol: token.symbol,
             value: (parseFloat(token.marketCap.usd) + parseFloat(token.timeframes["24h"].volume)) / 2,
-            image: token.metadata.image_uri || ""
+            image: token.metadata.image_uri || "/default-token.png",
+            address: token.address
           }))
           .sort((a: ChartData, b: ChartData) => b.value - a.value)
           .slice(0, 10)
@@ -130,8 +133,9 @@ export default function ActivityPage() {
             width={logoSize}
             height={logoSize}
             clipPath={`url(#${clipId})`}
-            style={{ shapeRendering: 'geometricPrecision' }}
+            style={{ shapeRendering: 'geometricPrecision', cursor: 'pointer' }}
             preserveAspectRatio="xMidYMid slice"
+            onClick={() => window.open(`https://liquidlaunch.app/token/${entry.address}`, '_blank')}
           />
         )}
         {/* The bar itself */}

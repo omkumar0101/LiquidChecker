@@ -5,7 +5,8 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Copy } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { QuickStats } from "@/components/quick-stats"
 
 function formatNumber(num: number): string {
   if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, "") + "B"
@@ -17,15 +18,6 @@ function formatNumber(num: number): string {
 function shortAddress(addr: string): string {
   if (!addr) return ""
   return addr.slice(0, 3) + "..." + addr.slice(-4)
-}
-
-function timeAgo(timestamp: number): string {
-  const now = Math.floor(Date.now() / 1000)
-  const diff = now - timestamp
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
 }
 
 interface Token {
@@ -45,32 +37,57 @@ interface Token {
   creationTimestamp: number
   creator?: string
   progress?: number
-  timeframes?: {
-    "24h"?: {
-      priceChange?: string
+  timeframes: {
+    "24h": {
+      priceChange: string
       volume?: string
     }
   }
   holderCount?: string
 }
 
-export default function AgePage() {
+interface ChartData {
+  name: string
+  symbol: string
+  priceChange: number
+  marketCap: number
+  image: string
+  address: string
+}
+
+export default function ChangePage() {
   const [tokens, setTokens] = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [chartData, setChartData] = useState<ChartData[]>([])
 
   useEffect(() => {
     const fetchTokens = async () => {
       setLoading(true)
       try {
         const response = await fetch(
-          `https://liquidlaunch.app/api/tokens?page=${page}&limit=15&search=&sortKey=age&sortOrder=desc&timeframe=24h&view=in_progress&marketCapMin=0&marketCapMax=1000000&progressMin=0&progressMax=100&filterByHolderCount=false`
+          `https://liquidlaunch.app/api/tokens?page=${page}&limit=15&search=&sortKey=priceChange&sortOrder=desc&timeframe=24h&view=in_progress&marketCapMin=0&marketCapMax=1000000&progressMin=0&progressMax=100&filterByHolderCount=false`
         )
         const data = await response.json()
         setTokens(data.tokens)
         setTotalPages(data.pagination?.totalPages || 1)
+
+        // Process data for chart
+        const processedData = data.tokens
+          .map((token: Token) => ({
+            name: token.name,
+            symbol: token.symbol,
+            priceChange: Number(token.timeframes?.["24h"]?.priceChange || 0),
+            marketCap: Number(token.marketCap?.usd || 0),
+            image: token.metadata?.image_uri || "/default-token.png",
+            address: token.address
+          }))
+          .sort((a: ChartData, b: ChartData) => b.priceChange - a.priceChange)
+          .slice(0, 10)
+
+        setChartData(processedData)
       } catch (error) {
         console.error("Error fetching tokens:", error)
       } finally {
@@ -80,38 +97,14 @@ export default function AgePage() {
     fetchTokens()
   }, [page])
 
-  // Prepare chart data for the graph section using tokens as-is from the API (already sorted by newest)
-  const chartData = tokens.map(token => ({
-    name: token.name,
-    symbol: token.symbol,
-    marketCap: Number(token.marketCap?.usd || 0),
-    volume: Number(token.timeframes?.["24h"]?.volume || 0) * 1000000,
-    image: token.metadata?.image_uri || "/default-token.png"
-  }))
-
-  // Get max values for Y-axis domains
-  const maxMarketCap = Math.max(...chartData.map(d => d.marketCap))
-  const maxVolume = Math.max(...chartData.map(d => d.volume))
-
-  // Helper to generate Y-axis ticks in custom increments
-  function getTicks(max: number, interval: number) {
-    const ticks = [0]
-    let tick = interval
-    while (tick < max * 1.1) {
-      ticks.push(tick)
-      tick += interval
-    }
-    return ticks
-  }
-
-  // Custom Bar shape to show logo at the top of each bar, always circular and centered
+  // Custom Bar shape to show logo at the top of each bar
   const CustomBarWithLogo = (props: any) => {
     const { x, y, width, height, index } = props;
     const entry = chartData[index];
     const logoSize = 36;
     const logoX = x + width / 2 - logoSize / 2;
     const logoY = y - logoSize - 6;
-    const clipId = `bar-logo-clip-age-${index}`;
+    const clipId = `bar-logo-clip-${index}`;
     return (
       <g>
         <defs>
@@ -119,7 +112,6 @@ export default function AgePage() {
             <circle cx={logoX + logoSize / 2} cy={logoY + logoSize / 2} r={logoSize / 2} />
           </clipPath>
         </defs>
-        {/* Logo above the bar, always circular and centered */}
         {entry && (
           <image
             href={entry.image}
@@ -128,17 +120,17 @@ export default function AgePage() {
             width={logoSize}
             height={logoSize}
             clipPath={`url(#${clipId})`}
-            style={{ shapeRendering: 'geometricPrecision' }}
+            style={{ shapeRendering: 'geometricPrecision', cursor: 'pointer' }}
             preserveAspectRatio="xMidYMid slice"
+            onClick={() => window.open(`https://liquidlaunch.app/token/${entry.address}`, '_blank')}
           />
         )}
-        {/* The bar itself */}
         <rect
           x={x}
           y={y}
           width={width}
           height={height}
-          fill="hsl(var(--primary))"
+          fill={entry?.priceChange >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
           rx={4}
           ry={4}
         />
@@ -146,31 +138,20 @@ export default function AgePage() {
     );
   };
 
-  // Custom dot for LineChart to show token logo as a circle
-  const CustomLogoDot = (props: any) => {
-    const { cx, cy, index } = props;
-    const entry = chartData[index];
-    const logoSize = 32;
-    const clipId = `line-logo-clip-age-${index}`;
+  // Custom XAxis tick
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
     return (
-      <g key={(entry?.symbol || 'dot') + '-' + index}>
-        <defs>
-          <clipPath id={clipId}>
-            <circle cx={cx} cy={cy} r={logoSize / 2} />
-          </clipPath>
-        </defs>
-        {entry && (
-          <image
-            href={entry.image}
-            x={cx - logoSize / 2}
-            y={cy - logoSize / 2}
-            width={logoSize}
-            height={logoSize}
-            clipPath={`url(#${clipId})`}
-            style={{ shapeRendering: 'geometricPrecision' }}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        )}
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={0}
+          y={16}
+          textAnchor="middle"
+          fill="#666"
+          fontSize={12}
+        >
+          {payload.value}
+        </text>
       </g>
     );
   };
@@ -182,88 +163,56 @@ export default function AgePage() {
         <Card>
           <CardHeader>
             <div className="space-y-1">
-              <h2 className="text-3xl font-bold tracking-tight">Token Age Distribution</h2>
-              <p className="text-muted-foreground">Market cap and volume of the most recently created tokens</p>
+              <h2 className="text-3xl font-bold tracking-tight">Price Change Distribution</h2>
+              <p className="text-muted-foreground">Top 10 tokens by 24h price change percentage</p>
             </div>
           </CardHeader>
           <CardContent>
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 44, right: 30, left: 20, bottom: 20 }}>
+                <BarChart data={chartData} margin={{ top: 44, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="symbol"
-                    tick={({ x, y, payload }) => (
-                      <g transform={`translate(${x},${y})`}>
-                        <text
-                          x={0}
-                          y={16}
-                          textAnchor="middle"
-                          fill="#666"
-                          fontSize={12}
-                        >
-                          {payload.value}
-                        </text>
-                      </g>
-                    )}
+                    tick={CustomXAxisTick}
                     interval={0}
                   />
                   <YAxis 
-                    yAxisId="left"
-                    tickFormatter={(value) => formatNumber(value)}
-                    domain={[0, maxMarketCap * 1.1]}
-                    ticks={getTicks(maxMarketCap, 5000)}
-                  />
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    tickFormatter={(value) => formatNumber(value)}
-                    domain={[0, maxVolume > 0 ? maxVolume * 1.1 : 1]}
-                    ticks={getTicks(maxVolume, 100)}
+                    tickFormatter={(value) => `${value}%`}
                   />
                   <Tooltip content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
-                      const marketCap = typeof payload[0].value === 'number' ? payload[0].value : 0;
-                      const volume = typeof payload[1].value === 'number' ? payload[1].value : 0;
+                      const data = payload[0].payload;
                       return (
                         <div className="bg-background border rounded-lg p-3 shadow-lg">
                           <p className="font-bold">{label}</p>
-                          <p className="text-primary">Market Cap: {formatNumber(marketCap)}</p>
-                          <p className="text-blue-500">Volume: {formatNumber(volume)}</p>
+                          <p className={data.priceChange >= 0 ? "text-primary" : "text-destructive"}>
+                            Price Change: {data.priceChange.toFixed(2)}%
+                          </p>
+                          <p className="text-muted-foreground">
+                            Market Cap: ${formatNumber(data.marketCap)}
+                          </p>
                         </div>
                       )
                     }
                     return null
                   }} />
-                  <Line 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="marketCap" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3} 
-                    dot={CustomLogoDot} 
-                    activeDot={CustomLogoDot} 
-                    name="Market Cap"
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="volume" 
-                    stroke="#007bff"
-                    strokeWidth={3} 
-                    dot={false}
-                    name="Volume"
-                  />
-                </LineChart>
+                  <Bar dataKey="priceChange" shape={CustomBarWithLogo} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Stats Section */}
+        {!loading && <QuickStats tokens={tokens} />}
+
+        {/* Token List Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Latest Tokens (by Age)</CardTitle>
+            <CardTitle>Top Price Changes</CardTitle>
             <p className="text-muted-foreground text-sm mt-1">
-              This page shows the most recently created tokens.
+              This page shows tokens with the highest 24h price changes.
             </p>
           </CardHeader>
           <CardContent>
@@ -392,12 +341,8 @@ export default function AgePage() {
                             <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                           </div>
                         </div>
-                        {/* Bottom row: time ago, holders */}
-                        <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <span>🕒</span>
-                            <span>{timeAgo(token.creationTimestamp)}</span>
-                          </div>
+                        {/* Bottom row: holders */}
+                        <div className="flex justify-end items-center mt-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <span><i className="fa-solid fa-users"></i></span>
                             <span>{token.holderCount || 0} holders</span>

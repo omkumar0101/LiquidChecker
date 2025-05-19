@@ -30,7 +30,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       path: "/compare",
       icon: BarChart3,
     },
-    { 
+    {
       name: "Activity", 
       path: "/activity", 
       icon: Zap 
@@ -74,16 +74,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-[240px] border-r bg-background fixed h-screen">
         <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center space-x-2">
-            <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
-              <LineChart className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <div className="flex items-center space-x-2">
+              <div className="rounded-full bg-primary w-8 h-8 flex items-center justify-center">
+                <LineChart className="h-4 w-4 text-primary-foreground" />
+              </div>
             <span className="text-lg font-bold">Hyper Dash</span>
           </div>
-        </div>
+            </div>
         <nav className="flex-1 py-4">
           <ul className="grid gap-1 px-2">
-            {routes.map((route) => (
+              {routes.map((route) => (
               <li key={route.path}>
                 <Link
                   href={route.path}
@@ -91,11 +91,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     pathname === route.path ? "bg-muted font-medium" : "text-muted-foreground"
                   }`}
                 >
-                  <route.icon className="h-5 w-5 shrink-0" />
+                      <route.icon className="h-5 w-5 shrink-0" />
                   {route.name}
-                </Link>
+                    </Link>
               </li>
-            ))}
+              ))}
             <li key={aboutRoute.path}>
               <Link
                 href={aboutRoute.path}
@@ -110,18 +110,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </ul>
         </nav>
         <div className="border-t p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <span className="text-sm font-medium">HD</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <span className="text-sm font-medium">HD</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">Guest User</p>
+                  <p className="text-xs text-muted-foreground truncate">Local Storage Only</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">Guest User</p>
-                <p className="text-xs text-muted-foreground truncate">Local Storage Only</p>
-              </div>
-            </div>
           </div>
-        </div>
+            </div>
       </aside>
 
       {/* Main Content */}
@@ -227,10 +227,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </a>
               </Button>
             </div>
-          </div>
-        </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+            </div>
+          </header>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
+        </div>
       </div>
-    </div>
   )
 }

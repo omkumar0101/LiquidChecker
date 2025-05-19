@@ -1,16 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from "recharts"
+import { Copy, ArrowDownIcon, ArrowUpIcon, Coins, TrendingUp, TrendingDown, DollarSign } from "lucide-react"
+import Image from "next/image"
 
 function formatNumber(num: number): string {
   if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2).replace(/\.00$/, "") + "B"
   if (num >= 1_000_000) return (num / 1_000_000).toFixed(2).replace(/\.00$/, "") + "M"
-  if (num >= 1_000 && num < 1_000_000) return (num / 1_000).toFixed(1) + "k"
+  if (num >= 1_000) return (num / 1_000).toFixed(2).replace(/\.00$/, "") + "k"
   return num.toLocaleString()
 }
 
@@ -28,90 +29,61 @@ function timeAgo(timestamp: number): string {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-interface Token {
-  address: string
-  name: string
-  symbol: string
-  marketCap: { usd: string }
-  liquidity?: { usd: string }
-  metadata: {
-    image_uri: string
-    description?: string
-    website?: string
-    twitter?: string
-    discord?: string
-    telegram?: string
-  }
-  creationTimestamp: number
-  creator?: string
-  progress?: number
-  timeframes?: {
-    "24h"?: {
-      priceChange?: string
-      volume?: string
-    }
-  }
-  holderCount?: string
-}
-
-export default function AgePage() {
-  const [tokens, setTokens] = useState<Token[]>([])
+const VolumePage: React.FC = () => {
+  const [tokens, setTokens] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState<string | null>(null)
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const PAGE_SIZE = 18
 
   useEffect(() => {
     const fetchTokens = async () => {
       setLoading(true)
       try {
         const response = await fetch(
-          `https://liquidlaunch.app/api/tokens?page=${page}&limit=15&search=&sortKey=age&sortOrder=desc&timeframe=24h&view=in_progress&marketCapMin=0&marketCapMax=1000000&progressMin=0&progressMax=100&filterByHolderCount=false`
+          "https://liquidlaunch.app/api/tokens?page=1&limit=2000&search=&sortKey=volume&sortOrder=desc&timeframe=24h&view=in_progress&marketCapMin=0&marketCapMax=1000000&progressMin=0&progressMax=100&filterByHolderCount=false"
         )
         const data = await response.json()
-        setTokens(data.tokens)
-        setTotalPages(data.pagination?.totalPages || 1)
+        setTokens(data.tokens || [])
       } catch (error) {
-        console.error("Error fetching tokens:", error)
+        setTokens([])
       } finally {
         setLoading(false)
       }
     }
     fetchTokens()
-  }, [page])
+  }, [])
 
-  // Prepare chart data for the graph section using tokens as-is from the API (already sorted by newest)
-  const chartData = tokens.map(token => ({
-    name: token.name,
+  // Section 1: Token chart data (top 15 by volume)
+  const tokenData = tokens.slice(0, 15).map((token: any) => ({
     symbol: token.symbol,
-    marketCap: Number(token.marketCap?.usd || 0),
     volume: Number(token.timeframes?.["24h"]?.volume || 0) * 1000000,
-    image: token.metadata?.image_uri || "/default-token.png"
+    marketCap: Number(token.marketCap?.usd || 0),
+    image: token.metadata?.image_uri || "/default-token.png",
+    address: token.address
   }))
 
-  // Get max values for Y-axis domains
-  const maxMarketCap = Math.max(...chartData.map(d => d.marketCap))
-  const maxVolume = Math.max(...chartData.map(d => d.volume))
+  // Section 2: Quick stats
+  const totalVolume = tokens.reduce((sum: number, t: any) => sum + (Number(t.timeframes?.["24h"]?.volume || 0) * 1000000), 0)
+  const topVolumeToken = tokens[0]
+  const lowVolumeToken = tokens.length > 0 ? tokens[tokens.length - 1] : null
 
-  // Helper to generate Y-axis ticks in custom increments
-  function getTicks(max: number, interval: number) {
-    const ticks = [0]
-    let tick = interval
-    while (tick < max * 1.1) {
-      ticks.push(tick)
-      tick += interval
-    }
-    return ticks
-  }
+  // Section 3: Token List
+  const totalPages = Math.ceil(tokens.length / PAGE_SIZE)
+  const paginatedTokens = tokens.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // Find the max volume token for bar image label
+  const maxVolume = Math.max(...tokenData.map(t => t.volume));
+  const maxVolumeTokenSymbol = tokenData.find(t => t.volume === maxVolume)?.symbol;
 
   // Custom Bar shape to show logo at the top of each bar, always circular and centered
   const CustomBarWithLogo = (props: any) => {
-    const { x, y, width, height, index } = props;
-    const entry = chartData[index];
+    const { x, y, width, height, index, payload } = props;
+    const entry = payload;
     const logoSize = 36;
     const logoX = x + width / 2 - logoSize / 2;
     const logoY = y - logoSize - 6;
-    const clipId = `bar-logo-clip-age-${index}`;
+    const clipId = `bar-logo-clip-${index}`;
     return (
       <g>
         <defs>
@@ -119,20 +91,17 @@ export default function AgePage() {
             <circle cx={logoX + logoSize / 2} cy={logoY + logoSize / 2} r={logoSize / 2} />
           </clipPath>
         </defs>
-        {/* Logo above the bar, always circular and centered */}
-        {entry && (
-          <image
-            href={entry.image}
-            x={logoX}
-            y={logoY}
-            width={logoSize}
-            height={logoSize}
-            clipPath={`url(#${clipId})`}
-            style={{ shapeRendering: 'geometricPrecision' }}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        )}
-        {/* The bar itself */}
+        <image
+          href={entry.image}
+          x={logoX}
+          y={logoY}
+          width={logoSize}
+          height={logoSize}
+          clipPath={`url(#${clipId})`}
+          style={{ shapeRendering: 'geometricPrecision', cursor: 'pointer' }}
+          preserveAspectRatio="xMidYMid slice"
+          onClick={() => window.open(`https://liquidlaunch.app/token/${entry.address}`, '_blank')}
+        />
         <rect
           x={x}
           y={y}
@@ -146,125 +115,128 @@ export default function AgePage() {
     );
   };
 
-  // Custom dot for LineChart to show token logo as a circle
-  const CustomLogoDot = (props: any) => {
-    const { cx, cy, index } = props;
-    const entry = chartData[index];
-    const logoSize = 32;
-    const clipId = `line-logo-clip-age-${index}`;
-    return (
-      <g key={(entry?.symbol || 'dot') + '-' + index}>
-        <defs>
-          <clipPath id={clipId}>
-            <circle cx={cx} cy={cy} r={logoSize / 2} />
-          </clipPath>
-        </defs>
-        {entry && (
-          <image
-            href={entry.image}
-            x={cx - logoSize / 2}
-            y={cy - logoSize / 2}
-            width={logoSize}
-            height={logoSize}
-            clipPath={`url(#${clipId})`}
-            style={{ shapeRendering: 'geometricPrecision' }}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        )}
-      </g>
-    );
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Graph Section */}
+        {/* Section 1: Token Chart */}
         <Card>
           <CardHeader>
             <div className="space-y-1">
-              <h2 className="text-3xl font-bold tracking-tight">Token Age Distribution</h2>
-              <p className="text-muted-foreground">Market cap and volume of the most recently created tokens</p>
+              <h2 className="text-3xl font-bold tracking-tight">Volume Distribution</h2>
+              <p className="text-muted-foreground">Top 15 tokens by 24h trading volume</p>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px] w-full">
+            <div className="h-[600px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 44, right: 30, left: 20, bottom: 20 }}>
+                <BarChart
+                  data={tokenData}
+                  margin={{ top: 44, right: 20, bottom: 20, left: 20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
+                  <XAxis
                     dataKey="symbol"
-                    tick={({ x, y, payload }) => (
-                      <g transform={`translate(${x},${y})`}>
-                        <text
-                          x={0}
-                          y={16}
-                          textAnchor="middle"
-                          fill="#666"
-                          fontSize={12}
-                        >
-                          {payload.value}
-                        </text>
-                      </g>
-                    )}
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     interval={0}
                   />
-                  <YAxis 
-                    yAxisId="left"
-                    tickFormatter={(value) => formatNumber(value)}
-                    domain={[0, maxMarketCap * 1.1]}
-                    ticks={getTicks(maxMarketCap, 5000)}
+                  <YAxis
+                    tickFormatter={(value) => `$${formatNumber(value)}`}
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    tickFormatter={(value) => formatNumber(value)}
-                    domain={[0, maxVolume > 0 ? maxVolume * 1.1 : 1]}
-                    ticks={getTicks(maxVolume, 100)}
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border rounded-lg p-3 shadow-lg">
+                            <p className="font-bold">{data.symbol}</p>
+                            <p className="text-primary">Volume: ${formatNumber(data.volume)}</p>
+                            <p className="text-primary">Market Cap: ${formatNumber(data.marketCap)}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
-                  <Tooltip content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const marketCap = typeof payload[0].value === 'number' ? payload[0].value : 0;
-                      const volume = typeof payload[1].value === 'number' ? payload[1].value : 0;
-                      return (
-                        <div className="bg-background border rounded-lg p-3 shadow-lg">
-                          <p className="font-bold">{label}</p>
-                          <p className="text-primary">Market Cap: {formatNumber(marketCap)}</p>
-                          <p className="text-blue-500">Volume: {formatNumber(volume)}</p>
-                        </div>
-                      )
-                    }
-                    return null
-                  }} />
-                  <Line 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="marketCap" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3} 
-                    dot={CustomLogoDot} 
-                    activeDot={CustomLogoDot} 
-                    name="Market Cap"
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="volume" 
-                    stroke="#007bff"
-                    strokeWidth={3} 
-                    dot={false}
-                    name="Volume"
-                  />
-                </LineChart>
+                  <Bar dataKey="volume" shape={CustomBarWithLogo} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
+
+        {/* Section 2: Quick Stats */}
         <Card>
           <CardHeader>
-            <CardTitle>Latest Tokens (by Age)</CardTitle>
-            <p className="text-muted-foreground text-sm mt-1">
-              This page shows the most recently created tokens.
-            </p>
+            <div className="space-y-1">
+              <h2 className="text-3xl font-bold tracking-tight">Quick Stats</h2>
+              <p className="text-muted-foreground">Key volume indicators at a glance</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="card-hover glass-effect">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Tokens Tracked</CardTitle>
+                  <Coins className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    {tokens.length.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Active tokens in the market</p>
+                </CardContent>
+              </Card>
+              <Card className="card-hover glass-effect">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    ${formatNumber(totalVolume)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">24h trading volume</p>
+                </CardContent>
+              </Card>
+              <Card className="card-hover glass-effect">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Top Volume</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    {topVolumeToken?.symbol || "N/A"}
+                  </div>
+                  <p className="text-sm text-green-500 flex items-center">
+                    <ArrowUpIcon className="mr-1 h-4 w-4" />
+                    ${formatNumber(Number(topVolumeToken?.timeframes?.["24h"]?.volume || 0) * 1000000)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="card-hover glass-effect">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Low Volume</CardTitle>
+                  <TrendingDown className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    {lowVolumeToken?.symbol || "N/A"}
+                  </div>
+                  <p className="text-sm text-red-500 flex items-center">
+                    <ArrowDownIcon className="mr-1 h-4 w-4" />
+                    ${formatNumber(Number(lowVolumeToken?.timeframes?.["24h"]?.volume || 0) * 1000000)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 3: Token List */}
+        <Card>
+          <CardHeader>
+            <div className="text-lg font-bold">All Tokens (by Volume)</div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -272,7 +244,7 @@ export default function AgePage() {
             ) : (
               <>
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  {tokens.map((token) => {
+                  {paginatedTokens.map((token) => {
                     const creatorShort = token.creator ? token.creator.slice(-6) : ""
                     const website = token.metadata?.website
                     const description = token.metadata?.description || ""
@@ -297,9 +269,9 @@ export default function AgePage() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             {token.metadata?.image_uri ? (
-                              <img src={token.metadata.image_uri || '/default-token.png'} alt={token.symbol} className="w-10 h-10 rounded-full object-cover border border-primary/30" />
+                              <img src={token.metadata.image_uri} alt={token.symbol} className="w-10 h-10 rounded-full object-cover border border-primary/30" />
                             ) : (
-                              <img src="/default-token.png" alt={token.symbol} className="w-10 h-10 rounded-full object-cover border border-primary/30" />
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg font-bold border border-primary/30">{token.symbol?.slice(0,2)}</div>
                             )}
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
@@ -370,12 +342,12 @@ export default function AgePage() {
                         {/* Stats row */}
                         <div className="flex justify-between items-center bg-primary/5 rounded-lg px-2 py-1 mt-2 mb-1">
                           <div className="flex flex-col items-center">
-                            <span className="text-xs text-muted-foreground">MC</span>
-                            <span className="text-lg font-bold text-foreground">${formatNumber(Number(token.marketCap?.usd || 0))}</span>
+                            <span className="text-xs text-muted-foreground">Vol</span>
+                            <span className="text-lg font-bold text-foreground">${formatNumber(Number(token.timeframes?.["24h"]?.volume || 0) * 1000000)}</span>
                           </div>
                           <div className="flex flex-col items-center">
-                            <span className="text-xs text-muted-foreground">Vol</span>
-                            <span className="text-lg font-bold text-foreground">{formatNumber(Number(token.timeframes?.["24h"]?.volume || 0) * 1000000)}</span>
+                            <span className="text-xs text-muted-foreground">MC</span>
+                            <span className="text-lg font-bold text-foreground">${formatNumber(Number(token.marketCap?.usd || 0))}</span>
                           </div>
                           <div className="flex flex-col items-center">
                             <span className="text-xs text-muted-foreground">Chg</span>
@@ -434,4 +406,6 @@ export default function AgePage() {
       </div>
     </DashboardLayout>
   )
-} 
+}
+
+export default VolumePage 
