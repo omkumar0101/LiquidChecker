@@ -7,6 +7,8 @@ import { PaginatedActivityTokenList } from "@/components/PaginatedActivityTokenL
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import Image from "next/image"
+import { Star, Share2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Token {
   symbol: string
@@ -22,6 +24,8 @@ interface Token {
     }
   }
   address: string
+  creationTimestamp?: number
+  holderCount?: number
 }
 
 interface ChartData {
@@ -36,6 +40,7 @@ export default function ActivityPage() {
   const [tokens, setTokens] = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [chartData, setChartData] = useState<ChartData[]>([])
+  const [watchlist, setWatchlist] = useState<string[]>([])
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -68,6 +73,27 @@ export default function ActivityPage() {
 
     fetchTokens()
   }, [])
+
+  useEffect(() => {
+    // Load watchlist from localStorage
+    const savedWatchlist = JSON.parse(localStorage.getItem("watchlist") || "[]")
+    setWatchlist(savedWatchlist)
+  }, [])
+
+  const toggleWatchlist = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const newWatchlist = watchlist.includes(address)
+      ? watchlist.filter(addr => addr !== address)
+      : [...watchlist, address]
+    localStorage.setItem("watchlist", JSON.stringify(newWatchlist))
+    setWatchlist(newWatchlist)
+  }
+
+  const shareToTelegram = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const url = `https://t.me/share/url?url=${encodeURIComponent(address)}`
+    window.open(url, "_blank")
+  }
 
   const formatNumber = (num: number) => {
     if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`
@@ -207,4 +233,13 @@ export default function ActivityPage() {
       </div>
     </DashboardLayout>
   )
+}
+
+function timeAgo(timestamp: number): string {
+  const now = Math.floor(Date.now() / 1000)
+  const diff = now - timestamp
+  if (diff < 60) return `${diff}s ago`
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
 } 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy } from "lucide-react"
+import { Copy, Star, Share2 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 function formatNumber(num: number): string {
@@ -60,6 +60,7 @@ export default function AgePage() {
   const [copied, setCopied] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [watchlist, setWatchlist] = useState<string[]>([])
 
   useEffect(() => {
     const fetchTokens = async () => {
@@ -79,6 +80,27 @@ export default function AgePage() {
     }
     fetchTokens()
   }, [page])
+
+  useEffect(() => {
+    // Load watchlist from localStorage
+    const savedWatchlist = JSON.parse(localStorage.getItem("watchlist") || "[]")
+    setWatchlist(savedWatchlist)
+  }, [])
+
+  const toggleWatchlist = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const newWatchlist = watchlist.includes(address)
+      ? watchlist.filter(addr => addr !== address)
+      : [...watchlist, address]
+    localStorage.setItem("watchlist", JSON.stringify(newWatchlist))
+    setWatchlist(newWatchlist)
+  }
+
+  const shareToTelegram = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const url = `https://t.me/share/url?url=${encodeURIComponent(address)}`
+    window.open(url, "_blank")
+  }
 
   // Prepare chart data for the graph section using tokens as-is from the API (already sorted by newest)
   const chartData = tokens.map(token => ({
@@ -392,15 +414,35 @@ export default function AgePage() {
                             <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                           </div>
                         </div>
-                        {/* Bottom row: time ago, holders */}
+                        {/* Bottom row: time ago, holders, watchlist, share */}
                         <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <span>🕒</span>
                             <span>{timeAgo(token.creationTimestamp)}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span><i className="fa-solid fa-users"></i></span>
-                            <span>{token.holderCount || 0} holders</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`p-1 ${watchlist.includes(token.address) ? "text-yellow-500" : ""}`}
+                              onClick={(e) => toggleWatchlist(token.address, e)}
+                              title={watchlist.includes(token.address) ? "Remove from watchlist" : "Add to watchlist"}
+                            >
+                              <Star className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="p-1"
+                              onClick={(e) => shareToTelegram(token.address, e)}
+                              title="Share to Telegram"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <div className="flex items-center gap-1">
+                              <span><i className="fa-solid fa-users"></i></span>
+                              <span>{token.holderCount || 0} holders</span>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Check, X, Copy, Users } from "lucide-react"
+import { Check, X, Copy, Users, Star, Share2 } from "lucide-react"
 
 const PAGE_SIZE = 9
 
@@ -35,6 +35,7 @@ export function PaginatedActivityTokenList({ selectedToken }: { selectedToken: s
   const [page, setPage] = useState(1)
   const [copied, setCopied] = useState<string | null>(null)
   const [totalPages, setTotalPages] = useState(1)
+  const [watchlist, setWatchlist] = useState<string[]>([])
 
   const fetchTokens = () => {
     setLoading(true)
@@ -55,8 +56,26 @@ export function PaginatedActivityTokenList({ selectedToken }: { selectedToken: s
 
   useEffect(() => {
     fetchTokens()
+    // Load watchlist from localStorage
+    const savedWatchlist = JSON.parse(localStorage.getItem("watchlist") || "[]")
+    setWatchlist(savedWatchlist)
     // eslint-disable-next-line
   }, [page, selectedToken])
+
+  const toggleWatchlist = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const newWatchlist = watchlist.includes(address)
+      ? watchlist.filter(addr => addr !== address)
+      : [...watchlist, address]
+    localStorage.setItem("watchlist", JSON.stringify(newWatchlist))
+    setWatchlist(newWatchlist)
+  }
+
+  const shareToTelegram = (address: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    const url = `https://t.me/share/url?url=${encodeURIComponent(address)}`
+    window.open(url, "_blank")
+  }
 
   return (
     <div className="space-y-4 mt-8">
@@ -186,15 +205,35 @@ export function PaginatedActivityTokenList({ selectedToken }: { selectedToken: s
                         <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
                       </div>
                     </div>
-                    {/* Bottom row: time ago, holders */}
+                    {/* Bottom row: time ago, holders, watchlist, share */}
                     <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <span>🕒</span>
                         <span>{timeAgo(token.creationTimestamp)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{formatNumber(Number(token.holderCount || 0))}</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`p-1 ${watchlist.includes(token.address) ? "text-yellow-500" : ""}`}
+                          onClick={(e) => toggleWatchlist(token.address, e)}
+                          title={watchlist.includes(token.address) ? "Remove from watchlist" : "Add to watchlist"}
+                        >
+                          <Star className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="p-1"
+                          onClick={(e) => shareToTelegram(token.address, e)}
+                          title="Share to Telegram"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          <span><i className="fa-solid fa-users"></i></span>
+                          <span>{token.holderCount || 0} holders</span>
+                        </div>
                       </div>
                     </div>
                   </div>
