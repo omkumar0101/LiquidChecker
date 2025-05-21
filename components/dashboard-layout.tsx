@@ -215,13 +215,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" asChild>
-                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">
+                <a href="https://x.com/liquid_checker?t=couhTB53ci7VqaiHWsSmZA&s=09" target="_blank" rel="noopener noreferrer">
                   <Twitter className="h-5 w-5" />
                   <span className="sr-only">Twitter</span>
                 </a>
               </Button>
               <Button variant="ghost" size="icon" asChild>
-                <a href="https://t.me" target="_blank" rel="noopener noreferrer">
+                <a href="https://t.me/liquidchecker" target="_blank" rel="noopener noreferrer">
                   <Send className="h-5 w-5" />
                   <span className="sr-only">Telegram</span>
                 </a>
